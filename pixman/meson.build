@@ -45,22 +45,9 @@ simds = [
   # because no system could have mmx, iwmmxt, and mmi, and it
   # simplifies the build logic to give them the same name.
   ['mmx', have_mmx, mmx_flags, []],
-  ['mmx', have_loongson_mmi, loongson_mmi_flags, []],
-  ['mmx', have_iwmmxt, iwmmxt_flags, []],
-
   ['sse2', have_sse2, sse2_flags, []],
   ['ssse3', have_ssse3, ssse3_flags, []],
-  ['vmx', have_vmx, vmx_flags, []],
-  ['arm-simd', have_armv6_simd, [],
-   ['pixman-arm-simd-asm.S', 'pixman-arm-simd-asm-scaled.S']],
-  ['arm-neon', have_neon, [],
-   ['pixman-arm-neon-asm.S', 'pixman-arm-neon-asm-bilinear.S']],
-  ['arm-neon', have_a64neon, [],
-   ['pixman-arma64-neon-asm.S', 'pixman-arma64-neon-asm-bilinear.S']],
-  ['mips-dspr2', have_mips_dspr2, mips_dspr2_flags,
-   ['pixman-mips-dspr2-asm.S', 'pixman-mips-memcpy-asm.S']],
 ]
-
 foreach simd : simds
   if simd[1]
     name = 'pixman-' + simd[0]
@@ -82,9 +69,6 @@ pixman_files = files(
   'pixman-conical-gradient.c',
   'pixman-filter.c',
   'pixman-x86.c',
-  'pixman-mips.c',
-  'pixman-arm.c',
-  'pixman-ppc.c',
   'pixman-edge.c',
   'pixman-edge-accessors.c',
   'pixman-fast-path.c',
@@ -123,7 +107,6 @@ libpixman = library(
   [pixman_files, config_h, version_h, cpu_features_sources],
   link_with: pixman_simd_libs,
   c_args : libpixman_extra_cargs,
-  dependencies : [dep_m, dep_threads],
   include_directories : cpu_features_inc,
   version : meson.project_version(),
   install : true,

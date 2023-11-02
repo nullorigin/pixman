@@ -19,11 +19,6 @@
 # SOFTWARE.
 
 option(
-  'loongson-mmi',
-  type : 'feature',
-  description : 'Use Loongson MMI intrinsic optimized paths',
-)
-option(
   'mmx',
   type : 'feature',
   description : 'Use X86 MMX intrinsic optimized paths',
@@ -39,40 +34,9 @@ option(
   description : 'Use X86 SSSE3 intrinsic optimized paths',
 )
 option(
-  'vmx',
-  type : 'feature',
-  description : 'Use PPC VMX/Altivec intrinsic optimized paths',
-)
-option(
-  'arm-simd',
-  type : 'feature',
-  description : 'Use ARMv6 SIMD intrinsic optimized paths',
-)
-option(
   'neon',
   type : 'feature',
   description : 'Use ARM NEON intrinsic optimized paths',
-)
-option(
-  'a64-neon',
-  type : 'feature',
-  description : 'Use ARM A64 NEON intrinsic optimized paths',
-)
-option(
-  'iwmmxt',
-  type : 'feature',
-  description : 'Use ARM IWMMXT intrinsic optimized paths',
-)
-option(
-  'iwmmxt2',
-  type : 'boolean',
-  value : true,
-  description : 'Use ARM IWMMXT2 intrinsic instead of IWMMXT',
-)
-option(
-  'mips-dspr2',
-  type : 'feature',
-  description : 'Use MIPS32 DSPr2 intrinsic optimized paths',
 )
 option(
   'gnu-inline-asm',
@@ -105,24 +69,4 @@ option(
   type : 'boolean',
   value : false,
   description : 'Enable output of filters that can be piped to gnuplot',
-)
-option(
-  'gtk',
-  type : 'feature',
-  description : 'Enable demos using GTK',
-)
-option(
-  'libpng',
-  type : 'feature',
-  description : 'Use libpng in tests'
-)
-option(
-  'tests',
-  type : 'feature',
-  description : 'Build tests'
-)
-option(
-  'demos',
-  type : 'feature',
-  description : 'Build demos'
 )

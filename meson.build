@@ -55,39 +55,6 @@ foreach opt : ['unused-local-typedefs']
   endif
 endforeach
 
-use_loongson_mmi = get_option('loongson-mmi')
-have_loongson_mmi = false
-loongson_mmi_flags = ['-mloongson-mmi']
-if not use_loongson_mmi.disabled()
-  if host_machine.cpu_family() == 'mips64' and cc.compiles('''
-      #ifndef __mips_loongson_vector_rev
-      #error "Loongson Multimedia Instructions are only available on Loongson"
-      #endif
-      #if defined(__GNUC__) && (__GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 4))
-      #error "Need GCC >= 4.4 for Loongson MMI compilation"
-      #endif
-      #include "pixman/loongson-mmintrin.h"
-      int main () {
-        union {
-          __m64 v;
-          char c[8];
-        } a = { .c = {1, 2, 3, 4, 5, 6, 7, 8} };
-        int b = 4;
-        __m64 c = _mm_srli_pi16 (a.v, b);
-        return 0;
-      }''',
-      args : loongson_mmi_flags,
-      include_directories : include_directories('.'),
-      name : 'Loongson MMI Intrinsic Support')
-    have_loongson_mmi = true
-  endif
-endif
-
-if have_loongson_mmi
-  config.set10('USE_LOONGSON_MMI', true)
-elif use_loongson_mmi.enabled()
-  error('Loongson MMI Support unavailable, but required')
-endif
 
 use_mmx = get_option('mmx')
 have_mmx = false
@@ -224,32 +191,13 @@ elif use_ssse3.enabled()
   error('ssse3 Support unavailable, but required')
 endif
 
-use_vmx = get_option('vmx')
-have_vmx = false
-vmx_flags = ['-maltivec', '-mabi=altivec']
-if not use_vmx.disabled()
-  if host_machine.cpu_family().startswith('ppc')
-    if cc.compiles('''
-        #include <altivec.h>
-        int main () {
-            vector unsigned int v = vec_splat_u32 (1);
-            v = vec_sub (v, v);
-            return 0;
-        }''',
-        args : vmx_flags,
-        name : 'VMX/Altivec Intrinsic Support')
-      have_vmx = true
-    endif
-  endif
-endif
-
 if cc.compiles('''
     __asm__ (
     ".func meson_test"
     ".endfunc"
     );''',
     name : 'test for ASM .func directive')
-    config.set('ASM_HAVE_FUNC_DIRECTIVE', 1)    
+    config.set('ASM_HAVE_FUNC_DIRECTIVE', 1)
 endif
 
 
@@ -266,137 +214,7 @@ if cc.links('''
         return testlabel();
     }''',
     name : 'test for ASM leading underscore')
-    config.set('ASM_LEADING_UNDERSCORE', 1)    
-endif
-
-
-
-if have_vmx
-  config.set10('USE_VMX', true)
-elif use_vmx.enabled()
-  error('vmx Support unavailable, but required')
-endif
-
-use_armv6_simd = get_option('arm-simd')
-have_armv6_simd = false
-if not use_armv6_simd.disabled()
-  if host_machine.cpu_family() == 'arm'
-    if cc.compiles(files('arm-simd-test.S'), name : 'ARMv6 SIMD Intrinsic Support')
-      have_armv6_simd = true
-    endif
-  endif
-endif
-
-if have_armv6_simd
-  config.set10('USE_ARM_SIMD', true)
-elif use_armv6_simd.enabled()
-  error('ARMv6 SIMD Support unavailable, but required')
-endif
-
-use_neon = get_option('neon')
-have_neon = false
-if not use_neon.disabled()
-  if host_machine.cpu_family() == 'arm'
-    if cc.compiles(files('neon-test.S'), name : 'NEON Intrinsic Support')
-      have_neon = true
-    endif
-  endif
-endif
-
-if have_neon
-  config.set10('USE_ARM_NEON', true)
-elif use_neon.enabled()
-  error('NEON Support unavailable, but required')
-endif
-
-use_a64neon = get_option('a64-neon')
-have_a64neon = false
-if not use_a64neon.disabled()
-  if host_machine.cpu_family() == 'aarch64'
-    if cc.compiles(files('a64-neon-test.S'), name : 'NEON A64 Intrinsic Support')
-      have_a64neon = true
-    endif
-  endif
-endif
-
-if have_a64neon
-  config.set10('USE_ARM_A64_NEON', true)
-elif use_a64neon.enabled()
-  error('A64 NEON Support unavailable, but required')
-endif
-
-use_iwmmxt = get_option('iwmmxt')
-have_iwmmxt = false
-iwmmxt_flags = ['-flax-vector-conversions', '-Winline']
-if not use_iwmmxt.disabled()
-  if get_option('iwmmxt2')
-    iwmmxt_flags += '-march=iwmmxt2'
-  else
-    iwmmxt_flags += '-march=iwmmxt'
-  endif
-
-  if host_machine.cpu_family() == 'arm'
-    if cc.compiles('''
-        #ifndef __IWMMXT__
-        #error "IWMMXT not enabled (with -march=iwmmxt)"
-        #endif
-        #if defined(__GNUC__) && (__GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 8))
-        #error "Need GCC >= 4.8 for IWMMXT intrinsics"
-        #endif
-        #include <mmintrin.h>
-        int main () {
-          union {
-            __m64 v;
-            char c[8];
-          } a = { .c = {1, 2, 3, 4, 5, 6, 7, 8} };
-          int b = 4;
-          __m64 c = _mm_srli_si64 (a.v, b);
-        }
-        ''',
-        args : iwmmxt_flags,
-        name : 'IWMMXT Intrinsic Support')
-      have_iwmmxt = true
-    endif
-  endif
-endif
-
-if have_iwmmxt
-  config.set10('USE_ARM_IWMMXT', true)
-elif use_iwmmxt.enabled()
-  error('IWMMXT Support unavailable, but required')
-endif
-
-use_mips_dspr2 = get_option('mips-dspr2')
-have_mips_dspr2 = false
-mips_dspr2_flags = ['-mdspr2']
-if not use_mips_dspr2.disabled()
-  if host_machine.cpu_family() == 'mips32'
-    if cc.compiles('''
-        #if !(defined(__mips__) &&  __mips_isa_rev >= 2)
-        #error MIPS DSPr2 is currently only available on MIPS32r2 platforms.
-        #endif
-        int
-        main ()
-        {
-            int c = 0, a = 0, b = 0;
-            __asm__ __volatile__ (
-                "precr.qb.ph %[c], %[a], %[b]          \n\t"
-                : [c] "=r" (c)
-                : [a] "r" (a), [b] "r" (b)
-            );
-            return c;
-        }''',
-        args : mipds_dspr2_flags,
-        name : 'DSPr2 Intrinsic Support')
-      have_mips_dspr2 = true
-    endif
-  endif
-endif
-
-if have_mips_dspr2
-  config.set10('USE_MIPS_DSPR2', true)
-elif use_mips_dspr2.enabled()
-  error('MIPS DSPr2 Support unavailable, but required')
+    config.set('ASM_LEADING_UNDERSCORE', 1)
 endif
 
 use_gnu_asm = get_option('gnu-inline-asm')
@@ -440,56 +258,10 @@ else
   dep_openmp = null_dep
 endif
 
-dep_gtk = dependency('gtk+-3.0', required : get_option('gtk').enabled() and get_option('demos').enabled())
-dep_glib = dependency('glib-2.0', required : get_option('gtk').enabled() and get_option('demos').enabled())
-
-dep_png = null_dep
-if not get_option('libpng').disabled()
-  dep_png = dependency('libpng', required : false)
-
-  # We need to look for the right library to link to for libpng,
-  # when looking for libpng manually
-  foreach png_ver : [ '16', '15', '14', '13', '12', '10' ]
-    if not dep_png.found()
-      dep_png = cc.find_library('libpng@0@'.format(png_ver), has_headers : ['png.h'], required : false)
-    endif
-  endforeach
-
-  if get_option('libpng').enabled() and not dep_png.found()
-    error('libpng support requested but libpng library not found')
-  endif
-endif
-
-if dep_png.found()
-  config.set('HAVE_LIBPNG', 1)
-endif
-dep_m = cc.find_library('m', required : false)
-dep_threads = dependency('threads')
-
 # MSVC-style compilers do not come with pthreads, so we must link
 # to it explicitly, currently pthreads-win32 is supported
 pthreads_found = false
 
-if dep_threads.found() and cc.has_header('pthread.h')
-  if cc.get_argument_syntax() == 'msvc'
-    pthread_lib = null_dep
-    foreach pthread_type : ['VC3', 'VSE3', 'VCE3', 'VC2', 'VSE2', 'VCE2']
-      if not pthread_lib.found()
-        pthread_lib = cc.find_library('pthread@0@'.format(pthread_type), required : false)
-      endif
-    endforeach
-    if pthread_lib.found()
-      pthreads_found = true
-      dep_threads = pthread_lib
-    endif
-  else
-    pthreads_found = true
-  endif
-endif
-
-if pthreads_found
-  config.set('HAVE_PTHREADS', 1)
-endif
 
 funcs = ['sigaction', 'alarm', 'mprotect', 'getpagesize', 'mmap', 'getisax', 'gettimeofday']
 # mingw claimes to have posix_memalign, but it doesn't
@@ -502,13 +274,6 @@ foreach f : funcs
     config.set('HAVE_@0@'.format(f.to_upper()), 1)
   endif
 endforeach
-
-# This is only used in one test, that defines _GNU_SOURCE
-if cc.has_function('feenableexcept',
-                   prefix : '#define _GNU_SOURCE\n#include <fenv.h>',
-                   dependencies : dep_m)
-  config.set('HAVE_FEENABLEEXCEPT', 1)
-endif
 
 if cc.has_header_symbol('fenv.h', 'FE_DIVBYZERO')
   config.set('HAVE_FEDIVBYZERO', 1)
@@ -586,18 +351,6 @@ version_conf.set('PIXMAN_VERSION_MICRO', split[2])
 add_project_arguments('-DHAVE_CONFIG_H', language : ['c'])
 
 subdir('pixman')
-
-if not get_option('tests').disabled() or not get_option('demos').disabled()
-  subdir(join_paths('test', 'utils'))
-endif
-
-if not get_option('demos').disabled()
-  subdir('demos')
-endif
-
-if not get_option('tests').disabled()
-  subdir('test')
-endif
 
 pkg = import('pkgconfig')
 pkg.generate(libpixman,
